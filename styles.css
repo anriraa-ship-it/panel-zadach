@@ -1,0 +1,57 @@
+/* ===== Панель Жизни — общая дизайн-система ===== */
+:root{
+  --bg:#07080d;--ink:#eef1ff;--muted:#7a809c;
+  --line:rgba(255,255,255,.06);--glass:rgba(255,255,255,.025);
+  --accent:#6f8bff;--accent-soft:rgba(111,139,255,.16);
+  --accent-line:rgba(111,139,255,.5);--accent-glow:rgba(111,139,255,.35);
+  --p-high:#ff6b8b;--p-mid:#ffcf4d;--p-low:#4be39a;
+  --s-plan:#6f8bff;--s-prog:#ffcf4d;--s-done:#4be39a;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--ink);
+  overflow-x:hidden;position:relative;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* фон-атмосфера */
+.aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5;mix-blend-mode:screen}
+.b1{width:480px;height:480px;background:radial-gradient(circle,#4f6bff,transparent 70%);top:-120px;left:-100px;animation:drift1 18s ease-in-out infinite}
+.b2{width:420px;height:420px;background:radial-gradient(circle,#9b5cff,transparent 70%);top:30%;right:-140px;animation:drift2 22s ease-in-out infinite}
+.b3{width:380px;height:380px;background:radial-gradient(circle,#15d9c4,transparent 70%);bottom:-120px;left:10%;animation:drift3 26s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(60px,80px) scale(1.15)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-70px,60px) scale(.9)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,-60px) scale(1.1)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.cursor-glow{position:fixed;width:520px;height:520px;border-radius:50%;
+  background:radial-gradient(circle,rgba(120,140,255,.10),transparent 60%);
+  transform:translate(-50%,-50%);pointer-events:none;z-index:2;transition:opacity .4s;opacity:0;will-change:transform}
+
+.wrap{position:relative;z-index:3;max-width:560px;margin:0 auto;
+  padding:calc(var(--safe-top) + 8px) 22px calc(var(--safe-bot) + 48px);min-height:100vh}
+
+/* статус-бар-заглушка */
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 4px 6px;font-size:13px;font-weight:600;letter-spacing:.5px;color:#cfd4f0}
+.statusbar .sig{display:flex;gap:6px;align-items:center;opacity:.9;font-size:11px}
+
+/* шапка экрана */
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 2px 6px}
+.iconbtn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--glass);
+  backdrop-filter:blur(10px);display:grid;place-items:center;cursor:pointer;transition:.3s;flex-shrink:0;text-decoration:none}
+.iconbtn:hover{border-color:var(--accent-line);box-shadow:0 0 20px var(--accent-glow)}
+.iconbtn svg{width:20px;height:20px;stroke:#aab0e0;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.titleblock{flex:1}
+.titleblock .kicker{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;font-weight:500}
+.titleblock h1{font-family:'Unbounded',sans-serif;font-weight:500;font-size:24px;letter-spacing:1px;
+  background:linear-gradient(120deg,#fff,#b8c0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* всплывашка */
+.toast{position:fixed;left:50%;bottom:calc(var(--safe-bot) + 30px);transform:translateX(-50%) translateY(20px);
+  background:rgba(20,22,34,.92);backdrop-filter:blur(16px);border:1px solid var(--accent-line);color:#eef1ff;
+  padding:13px 20px;border-radius:16px;font-size:13px;font-weight:500;z-index:80;box-shadow:0 12px 40px -8px var(--accent-glow);
+  opacity:0;pointer-events:none;transition:.35s;max-width:88%}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast b{color:var(--accent)}
+.hidden{display:none!important}
