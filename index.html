@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Панель Жизни</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07080d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Панель Жизни">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  header{text-align:center;padding:30px 0 20px;position:relative}
+  .greet{font-size:12px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;font-weight:500}
+  h1.name{font-family:'Unbounded',sans-serif;font-weight:600;font-size:clamp(34px,11vw,52px);
+    letter-spacing:2px;line-height:1;
+    background:linear-gradient(120deg,#fff 10%,#b8c0ff 45%,#7ee8d8 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 30px rgba(120,140,255,.35));animation:hueShift 10s linear infinite}
+  @keyframes hueShift{0%,100%{filter:drop-shadow(0 2px 30px rgba(120,140,255,.35))}50%{filter:drop-shadow(0 2px 36px rgba(120,230,216,.4))}}
+  .subtitle{font-size:12.5px;letter-spacing:6px;color:var(--muted);text-transform:uppercase;margin-top:12px;font-weight:400}
+  .settings-fab{position:absolute;top:26px;right:2px}
+
+  /* живая спираль */
+  .spiral-wrap{display:flex;flex-direction:column;align-items:center;margin-top:18px;gap:10px}
+  #spiral{width:150px;height:150px;display:block}
+  .spiral-cap{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+  .card{position:relative;border-radius:24px;padding:26px 20px 22px;text-decoration:none;
+    background:linear-gradient(160deg,rgba(255,255,255,.045),rgba(255,255,255,.01));
+    border:1px solid var(--line);overflow:hidden;cursor:pointer;
+    min-height:172px;display:flex;flex-direction:column;justify-content:space-between;
+    backdrop-filter:blur(14px);
+    transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .35s,box-shadow .35s;
+    opacity:0;transform:translateY(28px) scale(.96);animation:rise .7s forwards cubic-bezier(.2,.8,.2,1)}
+  @keyframes rise{to{opacity:1;transform:translateY(0) scale(1)}}
+  .card:nth-child(1){animation-delay:.05s}.card:nth-child(2){animation-delay:.13s}
+  .card:nth-child(3){animation-delay:.21s}.card:nth-child(4){animation-delay:.29s}
+  .card:nth-child(5){animation-delay:.37s}.card:nth-child(6){animation-delay:.45s}
+  .card:nth-child(7){animation-delay:.53s}.card:nth-child(8){animation-delay:.61s}
+  .card::before{content:"";position:absolute;top:0;left:18%;right:18%;height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.7;transition:.35s}
+  .card::after{content:"";position:absolute;inset:0;border-radius:24px;opacity:0;transition:opacity .4s;
+    background:radial-gradient(120px 120px at 50% 30%,var(--accent-soft),transparent 70%)}
+  .card:hover{transform:translateY(-6px) scale(1.015);border-color:var(--accent-line);
+    box-shadow:0 18px 50px -12px var(--accent-glow),0 0 0 1px var(--accent-line) inset}
+  .card:hover::after{opacity:1}
+  .card:active{transform:translateY(-2px) scale(.99)}
+  .icon{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;
+    background:linear-gradient(150deg,rgba(255,255,255,.06),transparent);border:1px solid var(--line);transition:.4s}
+  .icon svg{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
+    filter:drop-shadow(0 0 6px var(--accent-glow));transition:.4s}
+  .card:hover .icon{border-color:var(--accent-line);transform:translateY(-2px)}
+  .card:hover .icon svg{filter:drop-shadow(0 0 12px var(--accent))}
+  .label{font-family:'Unbounded',sans-serif;font-weight:400;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#e8eaff}
+  .meta{font-size:11px;color:var(--muted);margin-top:5px;letter-spacing:.3px;font-weight:500}
+  .meta b{color:var(--accent);font-weight:700}
+  .dot{position:absolute;top:20px;right:20px;width:8px;height:8px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 10px var(--accent);animation:blink 2.6s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  .c-plan{--accent:#6f8bff;--accent-soft:rgba(111,139,255,.16);--accent-line:rgba(111,139,255,.5);--accent-glow:rgba(111,139,255,.35)}
+  .c-bell{--accent:#a86bff;--accent-soft:rgba(168,107,255,.16);--accent-line:rgba(168,107,255,.5);--accent-glow:rgba(168,107,255,.35)}
+  .c-idea{--accent:#ffcf4d;--accent-soft:rgba(255,207,77,.15);--accent-line:rgba(255,207,77,.5);--accent-glow:rgba(255,207,77,.32)}
+  .c-note{--accent:#3fe0c5;--accent-soft:rgba(63,224,197,.15);--accent-line:rgba(63,224,197,.5);--accent-glow:rgba(63,224,197,.32)}
+  .c-fin{--accent:#56b6ff;--accent-soft:rgba(86,182,255,.15);--accent-line:rgba(86,182,255,.5);--accent-glow:rgba(86,182,255,.32)}
+  .c-goal{--accent:#b07bff;--accent-soft:rgba(176,123,255,.16);--accent-line:rgba(176,123,255,.5);--accent-glow:rgba(176,123,255,.35)}
+  .c-ppl{--accent:#4be39a;--accent-soft:rgba(75,227,154,.15);--accent-line:rgba(75,227,154,.5);--accent-glow:rgba(75,227,154,.32)}
+  .c-arch{--accent:#8a93b8;--accent-soft:rgba(138,147,184,.14);--accent-line:rgba(138,147,184,.5);--accent-glow:rgba(138,147,184,.3)}
+  .foot{text-align:center;margin-top:30px;color:var(--muted);font-size:11px;letter-spacing:2px}
+  .homebar{width:128px;height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin:18px auto 0}
+</style>
+</head>
+<body>
+  <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+  <div class="grain"></div>
+  <div class="cursor-glow" id="glow"></div>
+
+  <div class="wrap">
+    <div class="statusbar"><span>9:41</span><span class="sig">● ● ● ● ⌃ ▮</span></div>
+
+    <header>
+      <a class="iconbtn settings-fab" href="#" title="Настройки" id="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </a>
+      <div class="greet">Добро пожаловать</div>
+      <h1 class="name">АНДРЕЙ</h1>
+      <div class="subtitle">панель жизни</div>
+      <div class="spiral-wrap">
+        <canvas id="spiral" width="300" height="300"></canvas>
+        <div class="spiral-cap" id="spiralCap">система активна</div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <a class="card c-plan" href="planner.html">
+        <span class="dot"></span>
+        <div class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/></svg></div>
+        <div><div class="label">Планировщик</div><div class="meta" id="m-plan"><b>—</b> задач сегодня</div></div>
+      </a>
+      <a class="card c-bell" href="#">
+        <span class="dot"></span>
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9z"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+        <div><div class="label">Напоминания</div><div class="meta" id="m-bell"><b>—</b> активных</div></div>
+      </a>
+      <a class="card c-idea" href="#">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0012 2z"/></svg></div>
+        <div><div class="label">Идеи</div><div class="meta" id="m-idea"><b>—</b> в копилке</div></div>
+      </a>
+      <a class="card c-note" href="#">
+        <div class="icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M12 8h5M12 12h5M12 16h5"/></svg></div>
+        <div><div class="label">Заметки</div><div class="meta">скоро</div></div>
+      </a>
+      <a class="card c-fin" href="#">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v2"/><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M16 13h.01"/></svg></div>
+        <div><div class="label">Финансы</div><div class="meta">скоро</div></div>
+      </a>
+      <a class="card c-goal" href="#">
+        <div class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 3v3M21 12h-3"/></svg></div>
+        <div><div class="label">Цели</div><div class="meta" id="m-goal"><b>—</b> активных</div></div>
+      </a>
+      <a class="card c-ppl" href="#">
+        <div class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg></div>
+        <div><div class="label">Люди</div><div class="meta">скоро</div></div>
+      </a>
+      <a class="card c-arch" href="archive.html">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M21 8v11a2 2 0 01-2 2H5a2 2 0 01-2-2V8"/><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M10 12h4"/></svg></div>
+        <div><div class="label">Архив</div><div class="meta" id="m-arch">всё сохранено</div></div>
+      </a>
+    </main>
+
+    <div class="foot">синхронизировано · только что</div>
+    <div class="homebar"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script src="store.js"></script>
+<script>
+// ===== живая спираль на canvas =====
+(function(){
+  const cv=document.getElementById('spiral');const ctx=cv.getContext('2d');
+  const DPR=Math.min(window.devicePixelRatio||1,2);
+  cv.width=300*DPR;cv.height=300*DPR;ctx.scale(DPR,DPR);
+  const W=300,H=300,cx=W/2,cy=H/2;
+  const N=170;                  // частиц на спирали
+  const turns=3.4;              // витков
+  const maxR=120;
+  const palette=[[111,139,255],[155,124,255],[126,232,216]];
+  function lerp(a,b,t){return a+(b-a)*t}
+  function colAt(t){ // плавный переход по палитре
+    const seg=t*(palette.length-1);const i=Math.floor(seg);const f=seg-i;
+    const a=palette[i],b=palette[Math.min(i+1,palette.length-1)];
+    return [Math.round(lerp(a[0],b[0],f)),Math.round(lerp(a[1],b[1],f)),Math.round(lerp(a[2],b[2],f))];
+  }
+  let t0=performance.now();
+  function frame(now){
+    const time=(now-t0)/1000;
+    ctx.clearRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter';
+    const breath=1+0.05*Math.sin(time*1.2);            // дыхание
+    for(let i=0;i<N;i++){
+      const p=i/N;
+      const ang=p*turns*Math.PI*2 + time*0.6;          // вращение
+      const r=p*maxR*breath;
+      const x=cx+Math.cos(ang)*r;
+      const y=cy+Math.sin(ang)*r;
+      const c=colAt(p);
+      const pulse=0.55+0.45*Math.sin(time*2 - p*6);     // бегущая волна яркости
+      const size=lerp(0.6,2.8,p)*(0.8+0.5*pulse);
+      ctx.beginPath();
+      ctx.fillStyle='rgba('+c[0]+','+c[1]+','+c[2]+','+(0.25+0.6*pulse*p).toFixed(3)+')';
+      ctx.shadowColor='rgba('+c[0]+','+c[1]+','+c[2]+',0.9)';
+      ctx.shadowBlur=8*pulse;
+      ctx.arc(x,y,size,0,Math.PI*2);
+      ctx.fill();
+    }
+    // светящееся ядро
+    const core=ctx.createRadialGradient(cx,cy,0,cx,cy,26);
+    core.addColorStop(0,'rgba(180,200,255,'+(0.5+0.3*Math.sin(time*1.6))+')');
+    core.addColorStop(1,'rgba(180,200,255,0)');
+    ctx.fillStyle=core;ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(cx,cy,26,0,Math.PI*2);ctx.fill();
+    ctx.globalCompositeOperation='source-over';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+// ===== живые цифры на карточках из хранилища =====
+(function(){
+  const T=Store.tasks, today=Store.today();
+  const todayCnt=T.filter(t=>t.date===today && t.status!=='done').length;
+  const remCnt=T.reduce((s,t)=>s+((t.reminders&&t.reminders.length&&t.status!=='done')?1:0),0);
+  const goalCnt=Store.goals.length;
+  const ideaCnt=Store.ideas.length;
+  const arch=T.filter(t=>t.status==='done').length;
+  set('m-plan', todayCnt, 'задач сегодня');
+  set('m-bell', remCnt, 'активных');
+  set('m-idea', ideaCnt, 'в копилке');
+  set('m-goal', goalCnt, 'активных');
+  document.getElementById('m-arch').textContent = arch? (arch+' выполнено') : 'всё сохранено';
+  function set(id,n,suffix){const el=document.getElementById(id);if(el)el.innerHTML='<b>'+n+'</b> '+suffix;}
+})();
+
+// ===== ореол за курсором =====
+const glow=document.getElementById('glow');
+window.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){glow.style.opacity=1;glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px'}});
+
+// настройки (заглушка)
+document.getElementById('settings').onclick=e=>{e.preventDefault();const t=document.getElementById('toast');t.innerHTML='⚙ Настройки появятся позже';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)};
+
+// регистрация service worker для установки на телефон
+if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{})}
+</script>
+</body>
+</html>
