@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Архив — Панель Жизни</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07080d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* акцент архива — серо-синий, как карточка на главной */
+  :root{--accent:#8a93b8;--accent-soft:rgba(138,147,184,.14);--accent-line:rgba(138,147,184,.5);--accent-glow:rgba(138,147,184,.35)}
+
+  .barrow{display:flex;justify-content:flex-start;align-items:center;margin-top:18px;gap:12px}
+  .group{margin-top:22px}
+  .group h2{font-family:'Unbounded';font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;
+    color:var(--muted);margin-bottom:14px;padding-left:4px;display:flex;align-items:center;gap:9px}
+  .group h2 .cnt{font-family:'Manrope';font-size:11px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:20px;font-weight:600}
+  .group h2 .ln{flex:1;height:1px;background:var(--line)}
+
+  /* плитка проекта (горизонтальная, в стиле задач) */
+  .proj{position:relative;border-radius:22px;padding:16px;margin-bottom:13px;cursor:pointer;overflow:hidden;
+    background:linear-gradient(160deg,rgba(255,255,255,.045),rgba(255,255,255,.01));
+    border:1px solid var(--line);backdrop-filter:blur(14px);display:flex;align-items:center;gap:15px;
+    transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .35s,box-shadow .35s;
+    opacity:0;transform:translateY(20px) scale(.97);animation:rise .55s forwards cubic-bezier(.2,.8,.2,1)}
+  @keyframes rise{to{opacity:1;transform:translateY(0) scale(1)}}
+  .proj::before{content:"";position:absolute;top:0;left:14%;right:14%;height:1px;background:linear-gradient(90deg,transparent,var(--ac),transparent);opacity:.7}
+  .proj::after{content:"";position:absolute;inset:0;border-radius:22px;opacity:0;transition:.4s;background:radial-gradient(160px 120px at 30% 20%,var(--ac-soft),transparent 70%)}
+  .proj:hover{transform:translateY(-5px) scale(1.012);border-color:var(--ac-line);box-shadow:0 18px 50px -14px var(--ac-glow),0 0 0 1px var(--ac-line) inset}
+  .proj:hover::after{opacity:1}
+  .proj .dot{position:absolute;top:15px;right:16px;width:9px;height:9px;border-radius:50%;background:var(--ac);box-shadow:0 0 10px var(--ac)}
+  .pcover{width:64px;height:64px;border-radius:16px;flex-shrink:0;overflow:hidden;position:relative;
+    background:linear-gradient(150deg,var(--ac-soft),transparent);border:1px solid var(--line);display:grid;place-items:center}
+  .pcover img{width:100%;height:100%;object-fit:cover}
+  .pcover svg{width:26px;height:26px;stroke:var(--ac);fill:none;stroke-width:1.6;filter:drop-shadow(0 0 6px var(--ac-glow))}
+  .pbody{flex:1;min-width:0;padding-right:14px}
+  .pname{font-family:'Unbounded';font-size:14px;font-weight:400;color:#e8eaff;letter-spacing:.2px;word-break:break-word}
+  .pmeta{display:flex;gap:11px;margin-top:8px;flex-wrap:wrap}
+  .pmeta span{font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+  .pmeta svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+  .addbar{display:flex;align-items:center;gap:14px;margin-top:24px;padding:6px 4px}
+  .addbtn{flex:1;height:62px;border-radius:22px;border:1px dashed var(--accent-line);
+    background:linear-gradient(150deg,var(--accent-soft),transparent);color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:11px;font-family:'Unbounded';font-size:14px;font-weight:400;letter-spacing:1px;transition:.3s;backdrop-filter:blur(10px)}
+  .addbtn:hover{border-style:solid;box-shadow:0 14px 40px -12px var(--accent-glow);transform:translateY(-2px)}
+  .addbtn .plus{width:30px;height:30px;border-radius:50%;background:linear-gradient(150deg,var(--accent),#b9c0e0);display:grid;place-items:center}
+  .addbtn .plus svg{width:18px;height:18px;stroke:#1a1d2b;fill:none;stroke-width:2.6;stroke-linecap:round}
+
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 0;opacity:.7}
+
+  /* ===== детальная страница проекта (overlay-страница) ===== */
+  .projpage{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;
+    transform:translateX(100%);transition:transform .4s cubic-bezier(.2,.85,.25,1);z-index:40}
+  .projpage.show{transform:translateX(0)}
+  .pp-inner{position:relative;z-index:3;max-width:560px;margin:0 auto;padding:calc(var(--safe-top) + 8px) 20px calc(var(--safe-bot) + 40px)}
+  .pp-title{font-family:'Unbounded';font-size:22px;font-weight:500;color:#fff;outline:none;flex:1}
+  .pp-title:focus{border-bottom:1px dashed var(--accent-line)}
+  .pp-desc{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;
+    padding:11px 13px;color:var(--ink);font-family:'Manrope';font-size:13.5px;resize:vertical;min-height:48px;outline:none;margin-top:14px}
+  .pp-desc:focus{border-color:var(--accent-line)}
+  .seclabel{font-family:'Unbounded';font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:8px}
+  .seclabel .ln{flex:1;height:1px;background:var(--line)}
+
+  /* галерея-сетка */
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .gcell{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--glass);cursor:pointer;transition:.25s}
+  .gcell:hover{border-color:var(--accent-line);box-shadow:0 0 16px var(--accent-glow)}
+  .gcell img,.gcell video{width:100%;height:100%;object-fit:cover;display:block}
+  .gcell .play{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.25)}
+  .gcell .play svg{width:30px;height:30px;fill:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+  .gcell .gx{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(10,11,19,.8);
+    display:grid;place-items:center;color:#fff;font-size:13px;opacity:0;transition:.2s}
+  .gcell:hover .gx{opacity:1}
+  .gcell.add{display:grid;place-items:center;border-style:dashed;border-color:var(--accent-line)}
+  .gcell.add svg{width:26px;height:26px;stroke:var(--accent);fill:none;stroke-width:1.8}
+  .gcell.loading{display:grid;place-items:center}
+  .spin{width:22px;height:22px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  .mediabtns{display:flex;gap:10px;margin-top:12px}
+  .mb{flex:1;border:1px solid var(--accent-line);background:var(--accent-soft);color:#e8eaff;border-radius:14px;
+    padding:13px;font-family:'Manrope';font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}
+  .mb:hover{box-shadow:0 0 18px var(--accent-glow)}
+  .mb svg{width:17px;height:17px;stroke:var(--accent);fill:none;stroke-width:1.9}
+
+  /* ссылки */
+  .linkrow{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.04);border:1px solid var(--line);
+    border-radius:13px;padding:12px 14px;margin-bottom:9px;text-decoration:none}
+  .linkrow svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:1.8;flex-shrink:0}
+  .linkrow .lt{flex:1;min-width:0}
+  .linkrow .lt b{display:block;font-size:13.5px;color:#e8eaff;font-weight:600}
+  .linkrow .lt small{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .linkrow .lx{color:var(--muted);font-size:16px;cursor:pointer}
+  .linkadd{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .linkadd input{flex:1;min-width:120px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:11px;padding:10px 12px;color:var(--ink);font-family:'Manrope';font-size:13px;outline:none}
+  .linkadd input:focus{border-color:var(--accent-line)}
+  .linkadd button{border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent);border-radius:11px;padding:0 16px;cursor:pointer;font-size:18px}
+
+  .del-btn{margin-top:26px;width:100%;border:1px solid rgba(255,107,139,.4);background:rgba(255,107,139,.1);
+    color:var(--p-high);border-radius:14px;padding:13px;font-family:'Manrope';font-size:13px;font-weight:600;cursor:pointer}
+  .del-btn:hover{background:rgba(255,107,139,.18)}
+
+  /* просмотр фото на весь экран */
+  .viewer{position:fixed;inset:0;z-index:90;background:rgba(4,5,10,.95);display:none;align-items:center;justify-content:center;padding:20px}
+  .viewer.show{display:flex}
+  .viewer img,.viewer video{max-width:100%;max-height:90vh;border-radius:12px}
+  .viewer .vx{position:absolute;top:calc(var(--safe-top) + 14px);right:18px;width:42px;height:42px;border-radius:50%;
+    background:rgba(255,255,255,.1);border:1px solid var(--line);color:#fff;font-size:22px;cursor:pointer;display:grid;place-items:center}
+
+  /* акцентные цвета обложек проектов */
+  .ac-plan{--ac:#6f8bff;--ac-soft:rgba(111,139,255,.16);--ac-line:rgba(111,139,255,.5);--ac-glow:rgba(111,139,255,.35)}
+  .ac-note{--ac:#3fe0c5;--ac-soft:rgba(63,224,197,.15);--ac-line:rgba(63,224,197,.5);--ac-glow:rgba(63,224,197,.32)}
+  .ac-idea{--ac:#ffcf4d;--ac-soft:rgba(255,207,77,.15);--ac-line:rgba(255,207,77,.5);--ac-glow:rgba(255,207,77,.32)}
+  .ac-goal{--ac:#b07bff;--ac-soft:rgba(176,123,255,.16);--ac-line:rgba(176,123,255,.5);--ac-glow:rgba(176,123,255,.35)}
+  .ac-ppl{--ac:#4be39a;--ac-soft:rgba(75,227,154,.15);--ac-line:rgba(75,227,154,.5);--ac-glow:rgba(75,227,154,.32)}
+  .ac-fin{--ac:#56b6ff;--ac-soft:rgba(86,182,255,.15);--ac-line:rgba(86,182,255,.5);--ac-glow:rgba(86,182,255,.32)}
+
+  /* выбор цвета проекта */
+  .colorpick{display:flex;gap:9px;margin-top:12px}
+  .colorpick .cdot{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.2s}
+  .colorpick .cdot.on{border-color:#fff;transform:scale(1.1)}
+</style>
+</head>
+<body>
+  <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+  <div class="grain"></div>
+  <div class="cursor-glow" id="glow"></div>
+
+  <div class="wrap">
+    <div class="topbar">
+      <a class="iconbtn" href="index.html" title="Назад"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></a>
+      <div class="titleblock"><div class="kicker">Панель жизни</div><h1>Архив</h1></div>
+    </div>
+
+    <div id="listView"></div>
+
+    <div class="addbar">
+      <div class="addbtn" id="addBtn"><div class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>Новый проект</div>
+    </div>
+  </div>
+
+  <!-- страница проекта -->
+  <div class="projpage" id="projpage">
+    <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+    <div class="grain"></div>
+    <div class="pp-inner" id="ppInner"></div>
+  </div>
+
+  <!-- просмотрщик -->
+  <div class="viewer" id="viewer"><div class="vx" id="viewerClose">✕</div><div id="viewerBody"></div></div>
+
+  <!-- скрытые input для камеры и медиатеки -->
+  <input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none" multiple>
+  <input type="file" id="fileLib" accept="image/*,video/*" style="display:none" multiple>
+
+  <div class="toast" id="toast"></div>
+
+<script src="store.js"></script>
+<script>
+// проверка: загрузилось ли хранилище (частая причина — старый кэш)
+if(typeof Store==='undefined' || !Store.projects || !Store.Media){
+  document.getElementById('listView').innerHTML=
+    '<div style="text-align:center;padding:40px 20px;color:#eef1ff">'+
+    '<div style="font-family:Unbounded;font-size:15px;margin-bottom:10px">Нужно обновить данные</div>'+
+    '<div style="font-size:13px;color:#aab0e0;line-height:1.6">Закрой приложение полностью и открой заново.<br>Если не помогло — обнови страницу в Safari.</div></div>';
+  document.querySelector('.addbar').style.display='none';
+  throw new Error('Store not loaded — likely stale cache');
+}
+const COLORS=[['plan','#6f8bff'],['note','#3fe0c5'],['idea','#ffcf4d'],['goal','#b07bff'],['ppl','#4be39a'],['fin','#56b6ff']];
+let projects=Store.projects;
+let curId=null;            // открытый проект
+const objUrls=[];          // следить за временными URL
+
+function save(){Store.projects=projects}
+
+// ===== список проектов =====
+function renderList(){
+  const box=document.getElementById('listView');box.innerHTML='';
+  const g=document.createElement('div');g.className='group';
+  g.innerHTML='<h2>Проекты<span class="ln"></span>'+(projects.length?'<span class="cnt">'+projects.length+'</span>':'')+'</h2>';
+  if(!projects.length){const e=document.createElement('div');e.className='empty';e.textContent='Пока пусто — создай первый проект ↓';g.appendChild(e)}
+  else projects.forEach((p,i)=>{const el=projEl(p);el.style.animationDelay=(i*0.05)+'s';g.appendChild(el)});
+  box.appendChild(g);
+}
+function projEl(p){
+  const el=document.createElement('div');el.className='proj ac-'+(p.color||'plan');
+  const mediaCnt=(p.media||[]).length, linkCnt=(p.links||[]).length;
+  el.innerHTML='<span class="dot"></span>'+
+    '<div class="pcover" id="cover-'+p.id+'"><svg viewBox="0 0 24 24"><path d="M21 8v11a2 2 0 01-2 2H5a2 2 0 01-2-2V8"/><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M10 12h4"/></svg></div>'+
+    '<div class="pbody"><div class="pname">'+esc(p.name)+'</div><div class="pmeta">'+
+      '<span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'+mediaCnt+'</span>'+
+      (linkCnt?'<span><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>'+linkCnt+'</span>':'')+
+    '</div></div>';
+  el.onclick=()=>openProject(p.id);
+  // подгрузить обложку (первое медиа-фото)
+  loadCover(p);
+  return el;
+}
+async function loadCover(p){
+  if(!p.media||!p.media.length)return;
+  const photo=p.media.find(m=>m.type==='image')||p.media[0];
+  if(!photo)return;
+  try{const blob=await Store.Media.get(photo.key);if(blob){const url=URL.createObjectURL(blob);objUrls.push(url);
+    const c=document.getElementById('cover-'+p.id);if(c)c.innerHTML='<img src="'+url+'">';}}catch(e){}
+}
+
+// ===== страница проекта =====
+async function openProject(id){
+  curId=id;const p=projects.find(x=>x.id===id);if(!p)return;
+  const inner=document.getElementById('ppInner');
+  inner.innerHTML='<div class="topbar"><div class="iconbtn" id="ppBack"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>'+
+    '<div class="titleblock" style="flex:1"><div class="kicker">Проект</div></div></div>'+
+    '<div style="display:flex;align-items:center;gap:12px;margin-top:8px"><div class="pp-title" contenteditable="true" id="ppTitle">'+esc(p.name)+'</div></div>'+
+    '<div class="colorpick" id="colorPick"></div>'+
+    '<textarea class="pp-desc" id="ppDesc" placeholder="Описание проекта…">'+esc(p.desc||'')+'</textarea>'+
+    '<div class="seclabel">Медиа<span class="ln"></span></div>'+
+    '<div class="gallery" id="gallery"></div>'+
+    '<div class="mediabtns">'+
+      '<div class="mb" id="btnCamera"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Снять фото</div>'+
+      '<div class="mb" id="btnLib"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Из галереи</div>'+
+    '</div>'+
+    '<div class="seclabel">Ссылки<span class="ln"></span></div>'+
+    '<div id="linkList"></div>'+
+    '<div class="linkadd"><input id="linkTitle" placeholder="Название"><input id="linkUrl" placeholder="https://…"><button id="linkAdd">+</button></div>'+
+    '<button class="del-btn" id="ppDel">Удалить проект</button>';
+
+  // цвета
+  const cp=document.getElementById('colorPick');
+  COLORS.forEach(([k,hex])=>{const d=document.createElement('div');d.className='cdot'+(p.color===k?' on':'');d.style.background=hex;
+    d.onclick=()=>{p.color=k;save();cp.querySelectorAll('.cdot').forEach(x=>x.classList.remove('on'));d.classList.add('on')};cp.appendChild(d)});
+
+  document.getElementById('ppBack').onclick=closeProject;
+  document.getElementById('ppTitle').onblur=e=>{p.name=e.target.innerText.trim()||p.name;save()};
+  document.getElementById('ppDesc').oninput=e=>{p.desc=e.target.value;save()};
+  document.getElementById('btnCamera').onclick=()=>{window._target=p.id;document.getElementById('fileCamera').click()};
+  document.getElementById('btnLib').onclick=()=>{window._target=p.id;document.getElementById('fileLib').click()};
+  document.getElementById('linkAdd').onclick=()=>addLink(p);
+  document.getElementById('ppDel').onclick=()=>{
+    // удалить медиа из IndexedDB
+    (p.media||[]).forEach(m=>Store.Media.del(m.key).catch(()=>{}));
+    projects=projects.filter(x=>x.id!==p.id);save();closeProject();renderList();showToast('Проект удалён');
+  };
+
+  renderGallery(p);renderLinks(p);
+  document.getElementById('projpage').classList.add('show');
+}
+function closeProject(){document.getElementById('projpage').classList.remove('show');curId=null;renderList()}
+
+async function renderGallery(p){
+  const g=document.getElementById('gallery');g.innerHTML='';
+  for(const m of (p.media||[])){
+    const cell=document.createElement('div');cell.className='gcell';
+    try{
+      const blob=await Store.Media.get(m.key);
+      if(blob){const url=URL.createObjectURL(blob);objUrls.push(url);
+        if(m.type==='video'){cell.innerHTML='<video src="'+url+'"></video><div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>';}
+        else{cell.innerHTML='<img src="'+url+'">';}
+        cell.innerHTML+='<div class="gx" data-k="'+m.key+'">✕</div>';
+        cell.querySelector('img,video')&&(cell.onclick=e=>{if(e.target.classList.contains('gx'))return;openViewer(url,m.type)});
+        cell.querySelector('.gx').onclick=e=>{e.stopPropagation();removeMedia(p,m.key)};
+      }
+    }catch(e){cell.innerHTML='<div style="color:var(--muted);font-size:10px;display:grid;place-items:center;height:100%">нет файла</div>';}
+    g.appendChild(cell);
+  }
+  // плитка добавления
+  const add=document.createElement('div');add.className='gcell add';
+  add.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+  add.onclick=()=>{window._target=p.id;document.getElementById('fileLib').click()};
+  g.appendChild(add);
+}
+function removeMedia(p,key){
+  Store.Media.del(key).catch(()=>{});
+  p.media=p.media.filter(m=>m.key!==key);save();renderGallery(p);
+}
+
+// ===== обработка выбранных файлов =====
+async function handleFiles(files,projId){
+  const p=projects.find(x=>x.id===projId);if(!p||!files.length)return;
+  p.media=p.media||[];
+  const g=document.getElementById('gallery');
+  for(const file of files){
+    // плитка-загрузка
+    const ph=document.createElement('div');ph.className='gcell loading';ph.innerHTML='<div class="spin"></div>';
+    if(g)g.insertBefore(ph,g.lastChild);
+    try{
+      const isVideo=file.type.startsWith('video/');
+      const blob=isVideo?file:await Store.Media.compress(file);
+      const key='m_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+      await Store.Media.put(key,blob);
+      p.media.push({key,type:isVideo?'video':'image'});
+      save();
+    }catch(e){showToast('Не удалось добавить файл')}
+    if(ph.parentNode)ph.remove();
+  }
+  renderGallery(p);
+  showToast('Добавлено в проект');
+}
+document.getElementById('fileCamera').addEventListener('change',e=>{handleFiles([...e.target.files],window._target);e.target.value=''});
+document.getElementById('fileLib').addEventListener('change',e=>{handleFiles([...e.target.files],window._target);e.target.value=''});
+
+// ===== ссылки =====
+function renderLinks(p){
+  const box=document.getElementById('linkList');box.innerHTML='';
+  (p.links||[]).forEach((l,i)=>{
+    const a=document.createElement('a');a.className='linkrow';a.href=l.url;a.target='_blank';a.rel='noopener';
+    a.innerHTML='<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>'+
+      '<div class="lt"><b>'+esc(l.title||l.url)+'</b><small>'+esc(l.url)+'</small></div><span class="lx" data-i="'+i+'">✕</span>';
+    a.querySelector('.lx').onclick=e=>{e.preventDefault();e.stopPropagation();p.links.splice(i,1);save();renderLinks(p)};
+    box.appendChild(a);
+  });
+}
+function addLink(p){
+  const t=document.getElementById('linkTitle'),u=document.getElementById('linkUrl');
+  let url=u.value.trim();if(!url)return;
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  p.links=p.links||[];p.links.push({title:t.value.trim(),url});save();
+  t.value='';u.value='';renderLinks(p);
+}
+
+// ===== просмотрщик =====
+function openViewer(url,type){
+  const b=document.getElementById('viewerBody');
+  b.innerHTML=type==='video'?'<video src="'+url+'" controls autoplay></video>':'<img src="'+url+'">';
+  document.getElementById('viewer').classList.add('show');
+}
+document.getElementById('viewerClose').onclick=()=>document.getElementById('viewer').classList.remove('show');
+document.getElementById('viewer').onclick=e=>{if(e.target.id==='viewer')document.getElementById('viewer').classList.remove('show')};
+
+// ===== новый проект =====
+document.getElementById('addBtn').onclick=()=>{
+  const p={id:Date.now(),name:'Новый проект',color:'plan',cover:null,desc:'',media:[],links:[],created:Store.today()};
+  projects.push(p);save();renderList();openProject(p.id);
+  setTimeout(()=>{const t=document.getElementById('ppTitle');if(t){t.focus();document.execCommand&&document.getSelection().selectAllChildren(t)}},300);
+};
+
+// прочее
+let tT;function showToast(m){const t=document.getElementById('toast');t.innerHTML=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2000)}
+function esc(s){return(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+const glow=document.getElementById('glow');
+window.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){glow.style.opacity=1;glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px'}});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{})}
+
+renderList();
+</script>
+</body>
+</html>
