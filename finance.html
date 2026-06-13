@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Финансы — Панель Жизни</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700;800&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07080d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* акцент раздела — голубой (c-fin) */
+  :root{--fin:#56b6ff;--green:#4be39a;--pink:#ff6b8b;--blue:#6f8bff;--amber:#ffcf4d;--violet:#b07bff;--red:#ff6b6b;--rad:24px}
+
+  .wrap{padding-bottom:calc(var(--safe-bot) + 24px)}
+  .topbar{margin-bottom:14px}
+  .titleblock .kicker b{color:var(--fin)}
+
+  .gear{margin-left:auto;width:44px;height:44px;border-radius:14px;flex-shrink:0;cursor:pointer;
+    background:linear-gradient(135deg,rgba(86,182,255,.18),rgba(111,139,255,.14));
+    border:1px solid rgba(86,182,255,.35);display:grid;place-items:center;
+    box-shadow:0 0 0 1px rgba(86,182,255,.12),0 4px 16px rgba(0,0,0,.3);transition:.2s}
+  .gear:active{transform:scale(.9) rotate(40deg)}
+  .gear svg{width:20px;height:20px;stroke:#cfe3ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* крутилка дат */
+  .datepick{margin-bottom:14px}
+  .datepick-track{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 0;scroll-behavior:smooth}
+  .datepick-track::-webkit-scrollbar{display:none}
+  .dtile{flex-shrink:0;width:58px;scroll-snap-align:center;padding:10px 4px;border-radius:16px;
+    background:var(--glass);border:1px solid var(--line);text-align:center;cursor:pointer;
+    backdrop-filter:blur(10px);transition:transform .2s,border-color .2s,background .2s}
+  .dtile:active{transform:scale(.93)}
+  .dtile .dow{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .dtile .dnum{font-family:'Unbounded',sans-serif;font-weight:700;font-size:18px;margin:3px 0;color:#dfe4ff}
+  .dtile .mon{font-size:9px;color:var(--muted);text-transform:uppercase}
+  .dtile .dot{width:6px;height:6px;border-radius:50%;margin:5px auto 0}
+  .dot.pos{background:var(--green);box-shadow:0 0 7px var(--green)}
+  .dot.zero{background:var(--blue);box-shadow:0 0 7px var(--blue)}
+  .dot.neg{background:var(--red);box-shadow:0 0 7px var(--red)}
+  .dtile.sel{border-color:transparent;background:linear-gradient(135deg,rgba(75,227,154,.18),rgba(86,182,255,.18));
+    box-shadow:0 0 0 1.5px rgba(86,182,255,.5)}
+  .dtile.sel .dnum{color:#fff}
+
+  /* карточка дня */
+  .day-hero{position:relative;border-radius:var(--rad);padding:18px 20px;margin-bottom:12px;overflow:hidden;
+    background:linear-gradient(160deg,rgba(255,255,255,.045),rgba(255,255,255,.01));
+    border:1px solid var(--line);backdrop-filter:blur(14px);transition:box-shadow .4s}
+  .day-hero.pos{box-shadow:0 0 0 1px rgba(75,227,154,.32),0 14px 50px -16px rgba(75,227,154,.4)}
+  .day-hero.zero{box-shadow:0 0 0 1px rgba(111,139,255,.3),0 14px 50px -16px rgba(111,139,255,.4)}
+  .day-hero.neg{box-shadow:0 0 0 1px rgba(255,107,107,.32),0 14px 50px -16px rgba(255,107,107,.4)}
+  .dh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .dh-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .dh-amount{font-family:'Unbounded',sans-serif;font-weight:800;font-size:44px;line-height:1.05;margin:4px 0}
+  .day-hero.pos .dh-amount{color:var(--green)}
+  .day-hero.zero .dh-amount{color:var(--blue)}
+  .day-hero.neg .dh-amount{color:var(--red)}
+  .dh-meta{font-size:13px;color:var(--muted)}
+  .dh-meta b{color:#dfe4ff}
+  .accum{flex-shrink:0;text-align:right;padding:7px 12px;border-radius:14px}
+  .accum.pos{background:rgba(75,227,154,.12)}
+  .accum.neg{background:rgba(255,107,107,.12)}
+  .accum .al{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .accum .av{font-family:'Unbounded',sans-serif;font-weight:700;font-size:19px;margin-top:2px}
+  .accum.pos .av{color:var(--green)}.accum.neg .av{color:var(--red)}
+  .accum .as{font-size:10px;color:var(--muted);margin-top:1px}
+  .dh-prog{height:8px;border-radius:6px;background:rgba(255,255,255,.07);margin-top:12px;overflow:hidden}
+  .dh-prog>i{display:block;height:100%;border-radius:6px;transition:width .5s,background .4s}
+  .day-hero.pos .dh-prog>i{background:linear-gradient(90deg,var(--green),var(--fin))}
+  .day-hero.zero .dh-prog>i{background:linear-gradient(90deg,var(--blue),var(--violet))}
+  .day-hero.neg .dh-prog>i{background:linear-gradient(90deg,var(--red),var(--amber))}
+
+  /* отдельный счёт транспорт/бензин/дороги */
+  .sep-budget{display:flex;align-items:center;gap:12px;border-radius:16px;padding:12px 16px;margin-bottom:14px;
+    background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(12px);
+    box-shadow:0 0 0 1px rgba(86,182,255,.1)}
+  .sep-budget .si{width:40px;height:40px;border-radius:12px;background:rgba(86,182,255,.15);display:grid;place-items:center;font-size:19px;flex-shrink:0}
+  .sep-budget .sc{flex:1;min-width:0}
+  .sep-budget .sc b{font-size:14px;font-weight:600;color:#e8eaff}
+  .sep-budget .sc small{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .sep-budget .sp{height:6px;border-radius:5px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden}
+  .sep-budget .sp>i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--fin),var(--violet));transition:width .5s}
+  .sep-budget .sv{font-family:'Unbounded',sans-serif;font-weight:700;font-size:17px;color:var(--fin);flex-shrink:0;text-align:right}
+  .sep-budget .sv small{display:block;font-size:10px;color:var(--muted);font-family:'Manrope';font-weight:500}
+
+  .list-head{display:flex;justify-content:space-between;align-items:center;margin:6px 2px 8px}
+  .list-head h2{font-family:'Unbounded',sans-serif;font-weight:600;font-size:15px;letter-spacing:.5px}
+  .list-head .cnt{font-size:12px;color:var(--muted)}
+  .list-head .right{display:flex;align-items:center;gap:12px}
+  .add-btn{width:58px;height:58px;border-radius:18px;border:none;flex-shrink:0;cursor:pointer;line-height:1;
+    background:linear-gradient(135deg,var(--green),var(--fin));color:#06121d;font-size:28px;font-weight:700;
+    display:grid;place-items:center;box-shadow:0 8px 28px rgba(75,227,154,.42);transition:transform .15s}
+  .add-btn:active{transform:scale(.92)}
+  .hint{font-size:11px;color:var(--muted);opacity:.7;margin:0 2px 8px}
+
+  /* список трат */
+  .exp{display:flex;align-items:center;gap:14px;border-radius:18px;padding:13px 15px;margin-bottom:9px;
+    background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+    border:1px solid var(--line);backdrop-filter:blur(12px);animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .exp .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;flex-shrink:0}
+  .exp.food .ic{background:rgba(255,207,77,.15)}
+  .exp.transport .ic,.exp.toll .ic,.exp.fuel .ic{background:rgba(86,182,255,.15)}
+  .exp.home .ic{background:rgba(176,123,255,.15)}
+  .exp.fun .ic{background:rgba(155,92,255,.15)}
+  .exp.shop .ic{background:rgba(255,107,139,.15)}
+  .exp .info{flex:1;min-width:0}
+  .exp .info b{font-weight:600;font-size:15px;color:#eef1ff}
+  .exp .info small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .exp .amt{font-family:'Unbounded',sans-serif;font-weight:600;font-size:16px;color:var(--pink);flex-shrink:0}
+  .exp.off .amt{color:var(--fin)}
+  .tag-off{display:inline-block;font-size:9px;font-weight:700;color:var(--fin);background:rgba(86,182,255,.15);
+    padding:2px 7px;border-radius:8px;margin-top:4px;text-transform:uppercase;letter-spacing:.3px}
+  .empty{text-align:center;color:var(--muted);padding:36px 0;font-size:14px;line-height:1.5}
+
+  /* шторки */
+  .overlay{position:fixed;inset:0;z-index:60;background:rgba(5,6,12,.6);backdrop-filter:blur(4px);
+    display:none;align-items:flex-end;justify-content:center}
+  .overlay.active{display:flex;animation:fadeIn .25s ease}
+  .sheet{width:100%;max-width:560px;background:#12141f;border:1px solid var(--line);
+    border-radius:28px 28px 0 0;padding:22px 20px calc(var(--safe-bot) + 26px);animation:slideUp .3s cubic-bezier(.2,.8,.2,1);
+    max-height:92vh;overflow-y:auto}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .grip{width:42px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin:0 auto 16px}
+  .sheet h3{font-family:'Unbounded',sans-serif;font-weight:600;font-size:18px;margin-bottom:16px;letter-spacing:.5px}
+  .field{margin-bottom:14px}
+  .field label{font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+  .input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;
+    padding:14px;font-family:'Manrope';font-weight:600;font-size:16px;color:var(--ink);outline:none}
+  .input.big{font-family:'Unbounded',sans-serif;font-weight:700;font-size:30px;text-align:center}
+  .input:focus{border-color:var(--fin);box-shadow:0 0 0 1px var(--fin)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:rgba(86,182,255,.07);border:1px solid rgba(86,182,255,.18);border-radius:14px;padding:13px 15px;margin-bottom:16px;cursor:pointer}
+  .toggle-row .tl b{font-size:14px;font-weight:600;color:#e8eaff}
+  .toggle-row .tl small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .sw{width:46px;height:27px;border-radius:20px;background:rgba(255,255,255,.12);position:relative;flex-shrink:0;transition:background .2s}
+  .sw::after{content:'';position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:transform .2s}
+  .sw.on{background:var(--fin)}.sw.on::after{transform:translateX(19px)}
+  .cats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+  .cat{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:11px 4px;text-align:center;cursor:pointer;transition:.15s}
+  .cat .e{font-size:21px;display:block;margin-bottom:4px}
+  .cat .n{font-size:10px;color:var(--muted)}
+  .cat.sel{border-color:var(--green);background:rgba(75,227,154,.12)}
+  .cat.sel .n{color:#e8eaff}
+  .btn{width:100%;border:none;border-radius:16px;padding:16px;font-family:'Unbounded',sans-serif;font-weight:600;font-size:15px;
+    background:linear-gradient(135deg,var(--green),var(--fin));color:#06121d;cursor:pointer;letter-spacing:.5px}
+  .btn:active{transform:scale(.98)}
+  .btn-del{width:100%;border:1px solid rgba(255,107,107,.35);border-radius:16px;padding:14px;margin-top:10px;
+    font-family:'Unbounded',sans-serif;font-weight:500;font-size:14px;background:rgba(255,107,107,.1);color:var(--red);cursor:pointer}
+  .calc{background:rgba(86,182,255,.08);border:1px solid rgba(86,182,255,.2);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--muted);margin-bottom:16px}
+  .calc b{color:var(--fin);font-family:'Unbounded',sans-serif}
+  .home-block{background:rgba(176,123,255,.08);border:1px solid rgba(176,123,255,.2);border-radius:14px;padding:14px;margin-bottom:16px}
+  .home-block .ht{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px}
+  .home-block .hc{background:rgba(176,123,255,.1);border-radius:11px;padding:10px 12px;font-size:13px;color:var(--muted);margin-top:10px}
+  .home-block .hc b{color:var(--violet);font-family:'Unbounded',sans-serif}
+
+  /* пустое состояние — нет бюджета */
+  .setup{text-align:center;padding:50px 20px}
+  .setup .big{font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;margin-bottom:10px}
+  .setup p{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:22px}
+  .setup .btn{max-width:280px;margin:0 auto}
+</style>
+</head>
+<body>
+  <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+  <div class="grain"></div>
+  <div class="cursor-glow" id="glow"></div>
+
+  <div class="wrap">
+    <div class="statusbar"><span>9:41</span><span class="sig">● ● ● ● ⌃ ▮</span></div>
+
+    <div class="topbar">
+      <a class="iconbtn" href="index.html" title="Назад">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <div class="titleblock">
+        <div class="kicker" id="kicker">Финансы</div>
+        <h1>Финансы</h1>
+      </div>
+      <div class="gear" id="gear" title="Бюджет">
+        <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </div>
+    </div>
+
+    <!-- Экран без бюджета -->
+    <div id="setup" class="setup hidden">
+      <div class="big">Задай бюджет поездки</div>
+      <p>Укажи общую сумму и даты — приложение разделит её по дням, будет считать остаток и переносить его вперёд.</p>
+      <button class="btn" id="setupBtn">Настроить бюджет</button>
+    </div>
+
+    <!-- Основной экран -->
+    <div id="screen" class="hidden">
+      <div class="datepick"><div class="datepick-track" id="track"></div></div>
+
+      <div class="day-hero pos" id="dayHero">
+        <div class="dh-top">
+          <div>
+            <div class="dh-label" id="dhLabel">Остаток на день</div>
+            <div class="dh-amount" id="dhAmount">+0 €</div>
+            <div class="dh-meta">бюджет дня <b id="dhLimit">0 €</b> · потрачено <b id="dhSpent">0 €</b></div>
+          </div>
+          <div class="accum pos" id="accum">
+            <div class="al">за поездку</div>
+            <div class="av" id="accumVal">+0 €</div>
+            <div class="as" id="accumSub">в плюсе</div>
+          </div>
+        </div>
+        <div class="dh-prog"><i id="dhBar" style="width:0%"></i></div>
+      </div>
+
+      <div class="sep-budget" id="sepCard">
+        <div class="si">🚆</div>
+        <div class="sc">
+          <b>Транспорт, бензин, дороги</b>
+          <small id="sepSub">отдельный счёт</small>
+          <div class="sp"><i id="sepBar" style="width:0%"></i></div>
+        </div>
+        <div class="sv"><span id="sepSpent">0 €</span><small>из <span id="sepLimit">0 €</span></small></div>
+      </div>
+
+      <div class="list-head">
+        <h2 id="listTitle">Траты дня</h2>
+        <div class="right">
+          <span class="cnt" id="listCount">0 трат</span>
+          <button class="add-btn" id="addBtn">＋</button>
+        </div>
+      </div>
+      <div class="hint">Двойной тап по трате — редактировать</div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <!-- Шторка траты -->
+  <div class="overlay" id="expSheet">
+    <div class="sheet">
+      <div class="grip"></div>
+      <h3 id="expTitle">Новая трата</h3>
+      <input class="input big" id="expAmt" type="number" placeholder="0 €" inputmode="decimal" style="margin-bottom:16px">
+      <input class="input" id="expName" placeholder="Название (необязательно)" style="margin-bottom:16px">
+      <div class="toggle-row" id="toggleRow">
+        <div class="tl"><b>Вне дневного бюджета</b><small>уйдёт в отдельный счёт «Транспорт, бензин, дороги»</small></div>
+        <div class="sw" id="sw"></div>
+      </div>
+      <div class="cats" id="cats">
+        <div class="cat sel" data-c="food"><span class="e">🍝</span><span class="n">Еда</span></div>
+        <div class="cat" data-c="transport"><span class="e">🚆</span><span class="n">Транспорт</span></div>
+        <div class="cat" data-c="toll"><span class="e">🛣️</span><span class="n">Дороги</span></div>
+        <div class="cat" data-c="fuel"><span class="e">⛽</span><span class="n">Бензин</span></div>
+        <div class="cat" data-c="home"><span class="e">🏠</span><span class="n">Жильё</span></div>
+        <div class="cat" data-c="fun"><span class="e">🎟️</span><span class="n">Досуг</span></div>
+        <div class="cat" data-c="shop"><span class="e">🎁</span><span class="n">Покупки</span></div>
+      </div>
+      <div class="home-block hidden" id="homeBlock">
+        <div class="ht">🏠 Разделить на ночи</div>
+        <div class="two">
+          <div class="field" style="margin-bottom:0"><label>Заезд</label><input class="input" id="homeIn" type="date"></div>
+          <div class="field" style="margin-bottom:0"><label>Выезд</label><input class="input" id="homeOut" type="date"></div>
+        </div>
+        <div class="hc" id="homeCalc">укажи даты — сумма разделится по ночам</div>
+      </div>
+      <button class="btn" id="expSave">Добавить трату</button>
+      <button class="btn-del hidden" id="expDel">Удалить трату</button>
+    </div>
+  </div>
+
+  <!-- Шторка бюджета -->
+  <div class="overlay" id="budgetSheet">
+    <div class="sheet">
+      <div class="grip"></div>
+      <h3>Бюджет поездки</h3>
+      <div class="field"><label>Название поездки</label><input class="input" id="bTitle" placeholder="Например: Отпуск · Италия 🇮🇹"></div>
+      <div class="field"><label>Дневной бюджет (еда, досуг…)</label><input class="input" id="bTotal" type="number" inputmode="decimal" placeholder="0"></div>
+      <div class="two">
+        <div class="field"><label>Старт</label><input class="input" id="bStart" type="date"></div>
+        <div class="field"><label>Конец</label><input class="input" id="bEnd" type="date"></div>
+      </div>
+      <div class="calc" id="calcLine">укажи сумму и даты</div>
+      <div class="field"><label>Отдельный счёт: транспорт, бензин, дороги</label><input class="input" id="bSep" type="number" inputmode="decimal" placeholder="0"></div>
+      <button class="btn" id="budgetSave">Сохранить</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script src="store.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const F=Store.finance;                       // {budget,exp}
+const catMeta={food:{e:'🍝',n:'Еда'},transport:{e:'🚆',n:'Транспорт'},toll:{e:'🛣️',n:'Дороги'},fuel:{e:'⛽',n:'Бензин'},home:{e:'🏠',n:'Жильё'},fun:{e:'🎟️',n:'Досуг'},shop:{e:'🎁',n:'Покупки'}};
+const offByDefault={transport:true,toll:true,fuel:true};
+const DOW=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
+const MON=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+
+let active=0; // индекс выбранного дня
+
+// ---- даты ----
+function iso(d){return d.toISOString().slice(0,10);}
+function parseISO(s){const [y,m,dd]=s.split('-').map(Number);return new Date(y,m-1,dd);}
+function numDays(){ if(!F.budget.start||!F.budget.end) return 0;
+  return Math.max(1,Math.round((parseISO(F.budget.end)-parseISO(F.budget.start))/86400000)+1); }
+function dayBase(){ const n=numDays(); return n? F.budget.total/n : 0; }
+function dateOf(i){ const d=parseISO(F.budget.start); d.setDate(d.getDate()+i); return d; }
+function keyOf(i){ return iso(dateOf(i)); }
+
+// ---- расчёты ----
+function expOf(i){ return F.exp[keyOf(i)]||[]; }
+function spentDay(i){ return expOf(i).filter(e=>!e.off).reduce((s,e)=>s+e.a,0); }
+function carryInto(i){ let c=0; for(let k=0;k<i;k++) c+=dayBase()-spentDay(k); return c; }
+function limitOf(i){ return dayBase()+carryInto(i); }
+function remainOf(i){ return limitOf(i)-spentDay(i); }
+function accumAfter(i){ let c=0; for(let k=0;k<=i;k++) c+=dayBase()-spentDay(k); return c; }
+function sepSpentTotal(){ let s=0; Object.values(F.exp).forEach(arr=>arr.forEach(e=>{if(e.off)s+=e.a;})); return s; }
+function st(r){ return r>0.5?'pos':(r<-0.5?'neg':'zero'); }
+const R=Math.round;
+
+// ---- сегодняшний индекс ----
+function todayIndex(){
+  if(!F.budget.start) return 0;
+  const i=Math.round((parseISO(Store.today())-parseISO(F.budget.start))/86400000);
+  return Math.max(0,Math.min(numDays()-1,i));
+}
+
+// ===== РЕНДЕР =====
+function render(){
+  const hasBudget=F.budget.total>0 && F.budget.start && F.budget.end;
+  $('setup').classList.toggle('hidden',hasBudget);
+  $('screen').classList.toggle('hidden',!hasBudget);
+  if(!hasBudget) return;
+
+  $('kicker').innerHTML = F.budget.title ? esc(F.budget.title) : 'Финансы';
+
+  buildTrack();
+  const lim=limitOf(active),spent=spentDay(active),rem=remainOf(active),s=st(rem);
+  const d=dateOf(active), isToday=iso(d)===Store.today();
+  const hero=$('dayHero'); hero.className='day-hero '+s;
+  $('dhLabel').textContent=(isToday?'Остаток на сегодня':'Остаток на день')+' · '+d.getDate()+' '+MON[d.getMonth()];
+  $('dhAmount').textContent=(rem>=0?'+':'')+R(rem)+' €';
+  $('dhLimit').textContent=R(lim)+' €';
+  $('dhSpent').textContent=R(spent)+' €';
+  $('dhBar').style.width=Math.max(0,Math.min(100,lim>0?spent/lim*100:0))+'%';
+
+  const acc=accumAfter(active), ab=$('accum');
+  ab.className='accum '+(acc>=0?'pos':'neg');
+  $('accumVal').textContent=(acc>=0?'+':'')+R(acc)+' €';
+  $('accumSub').textContent=acc>=0?'в плюсе':'перерасход';
+
+  const sep=sepSpentTotal(), lim2=F.budget.sep||0;
+  $('sepSpent').textContent=R(sep)+' €';
+  $('sepLimit').textContent=R(lim2)+' €';
+  $('sepBar').style.width=Math.max(0,Math.min(100,lim2>0?sep/lim2*100:0))+'%';
+  $('sepSub').textContent= lim2>0 ? ('вне дневного · осталось '+R(lim2-sep)+' €') : 'вне дневного бюджета';
+
+  $('listTitle').textContent='Траты · '+d.getDate()+' '+MON[d.getMonth()];
+  const all=expOf(active);
+  $('listCount').textContent=all.length+' трат · '+R(all.reduce((s,e)=>s+e.a,0))+' €';
+  const list=$('list'); list.innerHTML='';
+  if(all.length===0){ list.innerHTML='<div class="empty">Пока трат нет.<br>Нажми ＋ чтобы добавить</div>'; }
+  [...all].reverse().forEach((e,ri)=>{
+    const realIdx=all.length-1-ri;
+    const m=catMeta[e.c]||catMeta.food;
+    const el=document.createElement('div');
+    el.className='exp '+e.c+(e.off?' off':'');
+    el.innerHTML=`<div class="ic">${m.e}</div><div class="info"><b>${esc(e.n||m.n)}</b><small>${m.n} · ${e.t||'—'}</small>${e.off?'<span class="tag-off">вне бюджета</span>':''}</div><div class="amt">−${e.a} €</div>`;
+    el.addEventListener('dblclick',()=>openEdit(realIdx));
+    list.appendChild(el);
+  });
+}
+
+function buildTrack(){
+  const tr=$('track'); tr.innerHTML=''; const n=numDays();
+  for(let i=0;i<n;i++){
+    const d=dateOf(i), s=st(remainOf(i));
+    const el=document.createElement('div');
+    el.className='dtile'+(i===active?' sel':'');
+    el.innerHTML=`<div class="dow">${DOW[d.getDay()]}</div><div class="dnum">${d.getDate()}</div><div class="mon">${MON[d.getMonth()]}</div><div class="dot ${s}"></div>`;
+    el.onclick=()=>{active=i;render();centerTile(i);};
+    tr.appendChild(el);
+  }
+}
+function centerTile(i){const tr=$('track');const t=tr.children[i];if(t)tr.scrollTo({left:t.offsetLeft-tr.clientWidth/2+t.clientWidth/2,behavior:'smooth'});}
+
+// ===== ТРАТА: создание/редактирование =====
+let selCat='food', expOff=false, editIdx=null;
+document.querySelectorAll('.cat').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.cat').forEach(x=>x.classList.remove('sel'));
+  c.classList.add('sel'); selCat=c.dataset.c;
+  expOff=!!offByDefault[selCat]; $('sw').classList.toggle('on',expOff);
+  $('homeBlock').classList.toggle('hidden',selCat!=='home');
+}));
+function setCat(c){selCat=c;document.querySelectorAll('.cat').forEach(x=>x.classList.toggle('sel',x.dataset.c===c));$('homeBlock').classList.toggle('hidden',c!=='home');}
+$('toggleRow').addEventListener('click',()=>{expOff=!expOff;$('sw').classList.toggle('on',expOff);});
+
+function recalcHome(){
+  const amt=parseFloat($('expAmt').value)||0, i=$('homeIn').value, o=$('homeOut').value, cal=$('homeCalc');
+  if(i&&o){ const nights=Math.max(1,Math.round((parseISO(o)-parseISO(i))/86400000));
+    cal.innerHTML='<b>'+nights+'</b> ноч. · по <b>'+R(amt/nights)+' €</b> в день'; }
+  else cal.textContent='укажи даты — сумма разделится по ночам';
+}
+$('homeIn').addEventListener('input',recalcHome);
+$('homeOut').addEventListener('input',recalcHome);
+$('expAmt').addEventListener('input',()=>{if(selCat==='home')recalcHome();});
+
+function openExp(){
+  editIdx=null;
+  $('expTitle').textContent='Новая трата'; $('expSave').textContent='Добавить трату'; $('expDel').classList.add('hidden');
+  $('expAmt').value=''; $('expName').value=''; setCat('food'); expOff=false; $('sw').classList.remove('on');
+  $('homeIn').value=''; $('homeOut').value=''; $('homeBlock').classList.add('hidden');
+  $('expSheet').classList.add('active'); setTimeout(()=>$('expAmt').focus(),250);
+}
+function openEdit(idx){
+  editIdx=idx; const e=expOf(active)[idx];
+  $('expTitle').textContent='Редактировать трату'; $('expSave').textContent='Сохранить'; $('expDel').classList.remove('hidden');
+  $('expAmt').value=e.a; $('expName').value=e.n||''; setCat(e.c); expOff=!!e.off; $('sw').classList.toggle('on',expOff);
+  $('expSheet').classList.add('active');
+}
+function closeSheet(id){$(id).classList.remove('active');}
+
+function saveExp(){
+  const v=parseFloat($('expAmt').value); if(!v||v<=0){$('expAmt').focus();return;}
+  const nm=$('expName').value.trim();
+  // Жильё с делением по ночам (только при создании)
+  if(selCat==='home' && editIdx===null){
+    const i=$('homeIn').value, o=$('homeOut').value;
+    if(i&&o){
+      const start=parseISO(F.budget.start), inD=parseISO(i);
+      const nights=Math.max(1,Math.round((parseISO(o)-inD)/86400000));
+      const per=R(v/nights), bid='hb'+Date.now();
+      for(let k=0;k<nights;k++){
+        const d=new Date(inD); d.setDate(d.getDate()+k); const key=iso(d);
+        const idx=Math.round((d-start)/86400000);
+        if(idx<0||idx>=numDays()) continue;
+        if(!F.exp[key]) F.exp[key]=[];
+        F.exp[key].push({c:'home',n:(nm||'Жильё')+' · ночь '+(k+1)+'/'+nights,a:per,t:'—',off:false,booking:bid});
+      }
+      Store.finance=F; closeSheet('expSheet'); render(); showToast('🏠 Жильё разбито по ночам'); return;
+    }
+  }
+  const key=keyOf(active);
+  if(editIdx!==null){
+    const e=F.exp[key][editIdx]; e.a=v; e.n=nm; e.c=selCat; e.off=expOff;
+  }else{
+    const now=new Date(), hh=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    if(!F.exp[key]) F.exp[key]=[];
+    F.exp[key].push({c:selCat,n:nm,a:v,t:hh,off:expOff});
+  }
+  Store.finance=F; closeSheet('expSheet'); render();
+}
+function delExp(){
+  if(editIdx===null) return;
+  const key=keyOf(active); F.exp[key].splice(editIdx,1);
+  if(F.exp[key].length===0) delete F.exp[key];
+  editIdx=null; Store.finance=F; closeSheet('expSheet'); render();
+}
+
+// ===== БЮДЖЕТ =====
+function openBudget(){
+  $('bTitle').value=F.budget.title||''; $('bTotal').value=F.budget.total||'';
+  $('bStart').value=F.budget.start||''; $('bEnd').value=F.budget.end||''; $('bSep').value=F.budget.sep||'';
+  updCalc(); $('budgetSheet').classList.add('active');
+}
+function updCalc(){
+  const t=parseFloat($('bTotal').value)||0, s=$('bStart').value, e=$('bEnd').value;
+  if(s&&e){ const nd=Math.max(1,Math.round((parseISO(e)-parseISO(s))/86400000)+1);
+    $('calcLine').innerHTML='≈ <b>'+R(t/nd)+' €</b> в день · '+nd+' дн. · перенос остатка включён'; }
+  else $('calcLine').textContent='укажи сумму и даты';
+}
+['bTotal','bStart','bEnd'].forEach(id=>$(id).addEventListener('input',updCalc));
+function saveBudget(){
+  const t=parseFloat($('bTotal').value)||0, s=$('bStart').value, e=$('bEnd').value;
+  if(!t||!s||!e){ showToast('Заполни сумму и даты'); return; }
+  if(parseISO(e)<parseISO(s)){ showToast('Конец раньше старта'); return; }
+  F.budget.title=$('bTitle').value.trim(); F.budget.total=t; F.budget.start=s; F.budget.end=e; F.budget.sep=parseFloat($('bSep').value)||0;
+  Store.finance=F; active=todayIndex(); closeSheet('budgetSheet'); render(); setTimeout(()=>centerTile(active),60);
+}
+
+// ===== события =====
+$('gear').onclick=openBudget;
+$('setupBtn').onclick=openBudget;
+$('addBtn').onclick=openExp;
+$('expSave').onclick=saveExp;
+$('expDel').onclick=delExp;
+$('budgetSave').onclick=saveBudget;
+[$('expSheet'),$('budgetSheet')].forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('active');}));
+
+// утилиты в стиле проекта
+let tT;function showToast(m){const t=$('toast');t.innerHTML=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2000)}
+function esc(s){return(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+const glow=$('glow');
+window.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){glow.style.opacity=1;glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px'}});
+
+// старт
+active=todayIndex();
+render();
+setTimeout(()=>{if(F.budget.total>0)centerTile(active)},80);
+if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js').catch(()=>{})}
+</script>
+</body>
+</html>
